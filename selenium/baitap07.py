@@ -12,7 +12,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 columns = [
     "Tên trường", 
     "Tên viết tắt",
-    "Loại trường",        # Công lập / Tư thục / ...
+    "Loại trường",        
     "Năm thành lập",
     "Hiệu trưởng",
     "Mã trường",
