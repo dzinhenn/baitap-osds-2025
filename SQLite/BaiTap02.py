@@ -5,6 +5,7 @@ import pandas as pd
 import re
 import sqlite3
 import sys
+
 sys.stdout.reconfigure(encoding='utf-8')
 painters_df = pd.DataFrame(columns=['name', 'birth', 'death', 'nationality'])
 
@@ -34,7 +35,7 @@ for li in li_tags:
         continue
 
 for count, link in enumerate(all_links):
-    if count >= 5:
+    if count >= 100:
         break
 
     driver.get(link)
@@ -63,11 +64,9 @@ for count, link in enumerate(all_links):
         death = ""
 
     # NATIONALITY
-    # NATIONALITY từ Birth place
     try:
         birth_td = driver.find_element(By.XPATH, "//th[text()='Born']/following-sibling::td")
         birth_text = birth_td.text.strip()
-        # thường birth_text: "15 April 1732 Grasse, France"
         if ',' in birth_text:
             citizen = birth_text.split(',')[-1].strip()
         else:
@@ -76,16 +75,20 @@ for count, link in enumerate(all_links):
     except:
         citizen = "Unknown"
 
-
     painters_df.loc[len(painters_df)] = [name, birth, death, citizen]
 
 driver.quit()
 
+# KẾT NỐI DATABASE
 conn = sqlite3.connect("painters.db")
 cursor = conn.cursor()
 
+# XÓA BẢNG CŨ NẾU TỒN TẠI (để tạo lại với cấu trúc mới)
+cursor.execute("DROP TABLE IF EXISTS painters")
+
+# TẠO BẢNG MỚI
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS painters (
+CREATE TABLE painters (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     birth TEXT,
@@ -94,80 +97,96 @@ CREATE TABLE IF NOT EXISTS painters (
 )
 """)
 
-# Chèn dữ liệu
+# CHÈN DỮ LIỆU
 sql_insert = """
 INSERT INTO painters (name, birth, death, nationality)
 VALUES (?, ?, ?, ?)
 """
 
-cursor.execute("PRAGMA table_info(painters)")
-print(cursor.fetchall())
-#A Thống kê toàn cục
-#1 Đếm tổng số họa sĩ đã được lưu trữ trong bảng.
-cursor.execute("select count (*)from painters")
-print("tổng số họa sĩ:", cursor.fetchone()[0])
+cursor.executemany(sql_insert, painters_df.values.tolist())
+conn.commit()
 
+print("✅ Đã lưu dữ liệu vào database!")
+print("="*70)
 
-#2 Hiển thị 5 dòng dữ liệu đầu tiên để kiểm tra cấu trúc và nội dung bảng.
-print("\n5 dòng dữ liệu đầu tiên:")
+# A. THỐNG KÊ TOÀN CỤC
+print("\n📊 THỐNG KÊ TOÀN CỤC")
+print("="*70)
+
+# 1. Tổng số họa sĩ
+cursor.execute("SELECT COUNT(*) FROM painters")
+print(f"1. Tổng số họa sĩ: {cursor.fetchone()[0]}")
+
+# 2. 5 dòng đầu tiên
+print("\n2. 5 dòng dữ liệu đầu tiên:")
 cursor.execute("SELECT * FROM painters LIMIT 5")
 for row in cursor.fetchall():
-    print(row)
+    print(f"   {row}")
 
-#3 Quốc tịch
-print("\nThống kê số họa sĩ theo quốc tịch:")
-cursor.execute("select distinct nationality from painters")
+# 3. Các quốc tịch
+print("\n3. Danh sách quốc tịch:")
+cursor.execute("SELECT DISTINCT nationality FROM painters")
 for row in cursor.fetchall():
-    print("-", row[0])
+    print(f"   - {row[0]}")
 
-#4 Hoạ sĩ tên bắt đầu bằng F
-cursor.execute("select count(*) from painters where name like 'F%'")
+# 4. Họa sĩ tên bắt đầu bằng F
+cursor.execute("SELECT COUNT(*) FROM painters WHERE name LIKE 'F%'")
+print(f"\n4. Số họa sĩ có tên bắt đầu bằng chữ F: {cursor.fetchone()[0]}")
+
+# 5. Họa sĩ không phải người Pháp
+print("\n5. Họa sĩ không phải người Pháp:")
+cursor.execute("SELECT name, nationality FROM painters WHERE nationality != 'French'")
 for row in cursor.fetchall():
-    print("\nSố họa sĩ có tên bắt đầu bằng chữ F:", row[0])
+    print(f"   - {row[0]} ({row[1]})")
 
-#5 Quốc tịch chưa French
-cursor.execute("select name, nationality from painters where nationality != 'French'")
-for row in cursor.fetchall():
-    print("-",row)
+# 6. Họa sĩ không có quốc tịch
+print("\n6. Họa sĩ không có thông tin quốc tịch:")
+cursor.execute("SELECT name FROM painters WHERE nationality IS NULL OR nationality = '' OR nationality = 'Unknown'")
+rows = cursor.fetchall()
+if rows:
+    for row in rows:
+        print(f"   - {row[0]}")
+else:
+    print("   (Không có)")
 
-#6 0 có quốc tịch
-cursor.execute("select name from painters where nationality is null or nationality =' '")
-for row in cursor.fetchall():
-    print("-", row[0])
-
-#7 có cả birth + death
+# 7. Họa sĩ có cả năm sinh và năm mất
 print("\n7. Họa sĩ có cả năm sinh và năm mất:")
 cursor.execute("""
-select name from painters
-where birth is not null and birth != '' 
-and death is not null and death != ''
+SELECT name, birth, death FROM painters
+WHERE birth IS NOT NULL AND birth != '' 
+AND death IS NOT NULL AND death != ''
 """)
 for row in cursor.fetchall():
-    print("-", row[0])
+    print(f"   - {row[0]} ({row[1]} - {row[2]})")
 
-#8 tên chứa Fales
+# 8. Tên chứa 'Fales'
 print("\n8. Họa sĩ có tên chứa 'Fales':")
-cursor.execute("select name from painters where name like '%Fales%'")
-for row in cursor.fetchall():
-    print("-", row[0])  
+cursor.execute("SELECT name FROM painters WHERE name LIKE '%Fales%'")
+rows = cursor.fetchall()
+if rows:
+    for row in rows:
+        print(f"   - {row[0]}")
+else:
+    print("   (Không tìm thấy)")
 
-#9 sắp xếp theo a-z
+# 9. Sắp xếp theo tên A-Z
 print("\n9. Họa sĩ sắp xếp theo tên A-Z:")
-cursor.execute("select name from painters order by name asc")
+cursor.execute("SELECT name FROM painters ORDER BY name ASC")
 for row in cursor.fetchall():
-    print("-", row[0])
+    print(f"   - {row[0]}")
 
-#10 nhóm theo quốc tịch
+# 10. Thống kê theo quốc tịch
 print("\n10. Thống kê số họa sĩ theo quốc tịch:")
 cursor.execute("""
-select nationality, count(*) 
-from painters
-group by nationality
-order by count(*) desc
-""")    
-
+SELECT nationality, COUNT(*) 
+FROM painters
+GROUP BY nationality
+ORDER BY COUNT(*) DESC
+""")
 for row in cursor.fetchall():
-    print(f"- {row[0]}: {row[1]} họa sĩ")
+    print(f"   - {row[0]}: {row[1]} họa sĩ")
+
+print("\n" + "="*70)
+print("✅ HOÀN THÀNH!")
 
 conn.close()
-
