@@ -9,8 +9,8 @@ import sys
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-print("🚀 Đang khởi động Chrome...")
-print("⏳ Lần đầu chạy sẽ tự động tải ChromeDriver, hãy đợi...")
+print(" Đang khởi động Chrome...")
+print(" Lần đầu chạy sẽ tự động tải ChromeDriver, hãy đợi...")
 
 try:
     # Tự động cài đặt ChromeDriver - KHÔNG CẦN TẢI THỦ CÔNG!
@@ -37,13 +37,13 @@ try:
     conn.commit()
 
     # MỞ TRANG
-    print("✓ Chrome đã mở")
-    print("📄 Đang truy cập trang web...")
+    print(" Chrome đã mở")
+    print(" Đang truy cập trang web...")
     driver.get("https://nhathuoclongchau.com.vn/thuc-pham-chuc-nang/vitamin-khoang-chat")
     time.sleep(5)
     
     # KIỂM TRA VÀ IN RA TẤT CẢ CÁC NÚT TRÊN TRANG
-    print("🔍 Đang kiểm tra các nút trên trang...")
+    print("Đang kiểm tra các nút trên trang...")
     try:
         all_buttons = driver.find_elements(By.TAG_NAME, "button")
         print(f"   Tìm thấy {len(all_buttons)} nút button")
@@ -55,7 +55,7 @@ try:
         pass
     
     # PHƯƠNG PHÁP 1: CUỘN LIÊN TỤC ĐỂ LOAD (INFINITE SCROLL)
-    print("📜 Đang cuộn liên tục để tải sản phẩm (infinite scroll)...")
+    print(" Đang cuộn liên tục để tải sản phẩm (infinite scroll)...")
     
     last_height = driver.execute_script("return document.body.scrollHeight")
     products_count = 0
@@ -108,7 +108,7 @@ try:
                         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
                         time.sleep(1)
                         driver.execute_script("arguments[0].click();", btn)
-                        print(f"   ✓ Đã click nút: '{btn_text}'")
+                        print(f"    Đã click nút: '{btn_text}'")
                         time.sleep(4)  # Chờ lâu hơn để sản phẩm load
                         break
                 except:
@@ -116,14 +116,14 @@ try:
         except:
             pass
     
-    print(f"✓ Hoàn thành cuộn trang, tổng cộng {products_count} sản phẩm")
+    print(f" Hoàn thành cuộn trang, tổng cộng {products_count} sản phẩm")
     
     # Cuộn về đầu trang
     driver.execute_script("window.scrollTo(0, 0)")
     time.sleep(2)
 
     # TÌM TẤT CẢ SẢN PHẨM
-    print("🔍 Đang tìm sản phẩm...")
+    print(" Đang tìm sản phẩm...")
     
     # Thử nhiều cách tìm button "Chọn mua"
     buttons = []
@@ -139,14 +139,14 @@ try:
             pass
     
     total = len(buttons)
-    print(f"✓ Tìm thấy {total} sản phẩm")
+    print(f" Tìm thấy {total} sản phẩm")
     
     if total == 0:
-        print("⚠️ KHÔNG TÌM THẤY SẢN PHẨM NÀO!")
-        print("📸 Đang chụp màn hình để kiểm tra...")
+        print(" KHÔNG TÌM THẤY SẢN PHẨM NÀO!")
+        print(" Đang chụp màn hình để kiểm tra...")
         driver.save_screenshot("debug_screenshot.png")
-        print("   Đã lưu screenshot vào: debug_screenshot.png")
-        print("\n🔍 Đang kiểm tra HTML của trang...")
+        print("Đã lưu screenshot vào: debug_screenshot.png")
+        print("\n Đang kiểm tra HTML của trang...")
         print(driver.page_source[:500])
         driver.quit()
         conn.close()
@@ -185,7 +185,7 @@ try:
             try:
                 link = div.find_element(By.TAG_NAME, 'a').get_attribute('href')
             except:
-                print(f"  [{index}/{total}] ⚠️ Không tìm thấy link, bỏ qua")
+                print(f"  [{index}/{total}]  Không tìm thấy link, bỏ qua")
                 continue
 
             # Lấy unit (đơn vị)
@@ -238,10 +238,10 @@ try:
                 success_count += 1
                 
             except Exception as e:
-                print(f"  [{index}/{total}] ❌ Lỗi lưu database: {e}")
+                print(f"  [{index}/{total}]  Lỗi lưu database: {e}")
 
         except Exception as e:
-            print(f"  [{index}/{total}] ❌ Lỗi xử lý sản phẩm: {e}")
+            print(f"  [{index}/{total}]  Lỗi xử lý sản phẩm: {e}")
             # Đảm bảo quay về tab chính nếu có lỗi
             if len(driver.window_handles) > 1:
                 driver.close()
@@ -249,13 +249,13 @@ try:
             continue
 
     print("="*70)
-    print(f"✅ HOÀN THÀNH!")
-    print(f"📊 Đã lưu thành công: {success_count}/{total} sản phẩm")
-    print(f"📁 Database: {db}")
+    print(f" HOÀN THÀNH!")
+    print(f" Đã lưu thành công: {success_count}/{total} sản phẩm")
+    print(f" Database: {db}")
     print("="*70)
 
 except Exception as e:
-    print(f"\n❌ LỖI CHƯƠNG TRÌNH: {e}")
+    print(f"\n LỖI CHƯƠNG TRÌNH: {e}")
     import traceback
     traceback.print_exc()
 
@@ -263,12 +263,12 @@ finally:
     # ĐÓNG KẾT NỐI
     try:
         driver.quit()
-        print("✓ Đã đóng trình duyệt")
+        print(" Đã đóng trình duyệt")
     except:
         pass
     
     try:
         conn.close()
-        print("✓ Đã đóng database")
+        print(" Đã đóng database")
     except:
         pass
